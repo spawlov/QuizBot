@@ -21,21 +21,21 @@ def main():
     }
     tg_handler = NotificationHandler('telegram', defaults=tg_handler_params)
     logger.add(
-        'debug.log',
+        f'{os.getcwd()}/debug.log',
         format='{level}::{time}::{message}',
         level='DEBUG',
         rotation='0:00',
         compression='zip',
     )
     logger.add(
-        'info.log',
+        f'{os.getcwd()}/info.log',
         format='{level}::{time}::{message}',
         level='INFO',
         rotation='0:00',
         compression='zip',
     )
     logger.add(
-        'error.log',
+        f'{os.getcwd()}/error.log',
         format='{level}::{time}::{message}',
         level='ERROR',
         rotation='0:00',
