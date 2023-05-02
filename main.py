@@ -1,36 +1,16 @@
 import os
-import random
-
-from dotenv import load_dotenv, find_dotenv
-from loguru import logger
-from notifiers.logging import NotificationHandler
+from threading import Thread
 
 from chat_bots.telegram import tg_bot
+from chat_bots.vk import vk_bot
 
+from dotenv import find_dotenv, load_dotenv
 
-def from_file_to_dict(path: str) -> dict:
-    with open(path, 'r', encoding='KOI8-R') as file:
-        questions_lines = file.readlines()
+from loguru import logger
 
-    result = {}
-    count = 0
-    while count < len(questions_lines):
-        if questions_lines[count].startswith('Вопрос '):
-            question_index = count + 1
-            question = answer = ''
-            while question_index < len(questions_lines) - 1 \
-                    and not questions_lines[question_index].startswith('Ответ'):
-                question += questions_lines[question_index].replace('\n', ' ')
-                question_index += 1
-            answer_index = question_index + 1
-            while answer_index < len(questions_lines) - 1 \
-                    and not questions_lines[answer_index].startswith('Вопрос '):
-                answer += questions_lines[answer_index]
-                answer_index += 1
-            result[question.rstrip()] = answer.rstrip().split('.')
-        count += 1
+from notifiers.logging import NotificationHandler
 
-    return result
+import redis
 
 
 def main():
@@ -63,15 +43,16 @@ def main():
     )
     logger.add(tg_handler, level='WARNING')
 
-    tg_bot(os.getenv('TG_BOT_TOKEN'))
+    redis_client = redis.Redis(
+        host=os.getenv('REDIS_HOST'),
+        port=int(os.getenv('REDIS_PORT')),
+        username=os.getenv('REDIS_USER'),
+        password=os.getenv('REDIS_PASSWORD'),
+    )
+
+    Thread(target=vk_bot, args=(os.getenv('VK_TOKEN'), redis_client)).start()
+    Thread(target=tg_bot, args=(os.getenv('TG_TOKEN'), redis_client)).start()
 
 
 if __name__ == '__main__':
     main()
-    # print(filename := random.choice(os.listdir('questions/')))
-    # theme = from_file_to_dict(f'questions/{filename}')
-    # print('*' * 100)
-    # print(key := random.choice(list(theme.keys())))
-    # print('=' * 100)
-    # print(theme[key][0])
-    # print('*' * 100)
