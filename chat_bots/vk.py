@@ -10,10 +10,13 @@ import requests
 
 import vk_api as vk
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from vk_api.longpoll import VkEventType, VkLongPoll
+from vk_api.longpoll import Event, VkEventType, VkLongPoll
+from vk_api.vk_api import VkApiMethod
 
 
-def send_message(vk_api, event, keyboard, text: str) -> None:
+def send_message(
+        vk_api: VkApiMethod, event: Event, keyboard:  VkKeyboard, text: str
+) -> None:
     vk_api.messages.send(
         user_id=event.user_id,
         message=text,
@@ -22,8 +25,9 @@ def send_message(vk_api, event, keyboard, text: str) -> None:
     )
 
 
-def handler_user_action(event, vk_api, keyboard, rd) -> None:
-    answer = rd.hgetall(event.user_id)[b'answer'].decode('utf-8')
+def handler_user_action(
+        event: Event, vk_api: VkApiMethod, keyboard:  VkKeyboard, rd: Redis
+) -> None:
     if event.text == 'Новый вопрос':
         send_message(
             vk_api, event, keyboard, get_next_question(rd, event.user_id)
