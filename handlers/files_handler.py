@@ -1,6 +1,8 @@
 import os
 import random
 
+from redis.client import Redis
+
 
 def from_file_to_dict(path: str) -> dict:
     with open(path, 'r', encoding='KOI8-R') as file:
@@ -25,7 +27,7 @@ def from_file_to_dict(path: str) -> dict:
     return result
 
 
-def get_next_question(rd, user_id) -> str:
+def get_next_question(rd: Redis, user_id: [int, str]) -> str:
     filename = random.choice(os.listdir('questions/'))
     questions = from_file_to_dict(f'questions/{filename}')
     question = random.choice(list(questions.keys()))
