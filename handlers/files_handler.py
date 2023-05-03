@@ -26,8 +26,8 @@ def from_file_to_dict(path: str) -> dict:
 
 
 def get_next_question(rd, user_id) -> str:
-    filename = random.choice(os.listdir(f'{os.path.abspath("questions")}/'))
-    questions = from_file_to_dict(f'{os.path.abspath("questions")}/{filename}')
+    filename = random.choice(os.listdir(f'{os.path.basename("questions")}/'))
+    questions = from_file_to_dict(f'{os.path.basename("questions")}/{filename}')
     question = random.choice(list(questions.keys()))
     data = {
         'filename': filename,
