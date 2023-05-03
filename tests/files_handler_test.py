@@ -33,11 +33,13 @@ class HandlersTest(TestCase):
         self.assertEqual(isinstance(
             get_next_question(self.get_redis_client(), 'test_user'), str
         ), True)
+        self.get_redis_client().delete('test_user')
 
     def test_get_next_question_len_result(self):
         self.assertNotEqual(
             len(get_next_question(self.get_redis_client(), 'test_user')), 0
         )
+        self.get_redis_client().delete('test_user')
 
 
 if __name__ == '__main__':
