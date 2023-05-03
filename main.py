@@ -12,6 +12,8 @@ from notifiers.logging import NotificationHandler
 
 import redis
 
+logger.remove()
+
 
 def main():
     load_dotenv(find_dotenv())
