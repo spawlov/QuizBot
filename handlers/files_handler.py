@@ -9,8 +9,8 @@ def from_file_to_dict(path: str) -> dict:
         questions = file.readlines()
     result = dict()
     count = 0
-    while count < len(questions):
-        if questions[count].startswith('Вопрос '):
+    for count, question in enumerate(questions):
+        if question.startswith('Вопрос '):
             question_index = count + 1
             question = answer = ''
             while question_index < len(questions) - 1 \
@@ -23,7 +23,6 @@ def from_file_to_dict(path: str) -> dict:
                 answer += questions[answer_index]
                 answer_index += 1
             result[question.rstrip()] = answer.rstrip()
-        count += 1
     return result
 
 
