@@ -1,15 +1,13 @@
 import random
 
-from handlers.files_handler import get_random_question
-from handlers.redis_handler import get_question_info
-
-from loguru import logger
-
 import requests
-
+from loguru import logger
 import vk_api as vk
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.longpoll import VkEventType, VkLongPoll
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+
+from handlers.redis_handler import get_question_info
+from handlers.files_handler import get_random_question
 
 
 def send_message(vk_api, event, keyboard, text):
@@ -21,23 +19,23 @@ def send_message(vk_api, event, keyboard, text):
     )
 
 
-def handler_user_action(event, questions, vk_api, keyboard, rd):
+def handler_user_action(event, questions, vk_api, keyboard, redis):
     if event.text == 'Новый вопрос':
         send_message(
             vk_api,
             event,
             keyboard,
-            get_random_question(rd, event.user_id, questions)
+            get_random_question(redis, event.user_id, questions)
         )
         return
-    elif event.text == 'Сдаться':
-        answer = rd.hgetall(event.user_id)[b'answer'].decode('utf-8')
+    if event.text == 'Сдаться':
+        answer = redis.hgetall(event.user_id)[b'answer'].decode('utf-8')
         send_message(vk_api, event, keyboard, f'Правильный ответ: {answer}')
         send_message(
             vk_api, event, keyboard, 'Для продолжения нажмите "Новый вопрос"'
         )
         return
-    answer = get_question_info(rd, event.user_id)[2]
+    answer = get_question_info(redis, event.user_id)[2]
     answer_for_verify = answer.split('.')[0].replace('"', '')
     if answer_for_verify.lower() != event.text.lower():
         send_message(
@@ -78,6 +76,6 @@ def vk_bot(vk_token, redis_client, questions):
             requests.exceptions.ReadTimeout,
             requests.exceptions.ConnectionError,
             requests.exceptions.HTTPError,
-    ) as e:
-        logger.error(e)
+    ) as error:
+        logger.error(error)
         logger.error('Quiz VK bot is down!')

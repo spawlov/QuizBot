@@ -5,7 +5,7 @@ from handlers.redis_handler import set_question_info
 
 
 def get_dict_from_files(path, encode):
-    result = dict()
+    result = {}
     list_files = [_ for _ in os.listdir(path) if _.endswith('.txt')]
     for filename in list_files:
         with open(f'{path}{filename}', 'r', encoding=encode) as file:
@@ -31,10 +31,10 @@ def get_dict_from_files(path, encode):
     return result
 
 
-def get_random_question(rd, user, questions):
+def get_random_question(redis, user, questions):
     question = random.choice(list(questions.keys()))
     set_question_info(
-        rd,
+        redis,
         user,
         questions[question]['filename'],
         question,

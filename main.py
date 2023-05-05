@@ -1,18 +1,14 @@
 import os
 from threading import Thread
 
-from chat_bots.telegram import tg_bot
-from chat_bots.vk import vk_bot
-
-from dotenv import find_dotenv, load_dotenv
-
-from handlers.files_handler import get_dict_from_files
-
+import redis
 from loguru import logger
-
+from dotenv import find_dotenv, load_dotenv
 from notifiers.logging import NotificationHandler
 
-import redis
+from chat_bots.vk import vk_bot
+from chat_bots.telegram import tg_bot
+from handlers.files_handler import get_dict_from_files
 
 logger.remove()
 
@@ -58,14 +54,14 @@ def main():
     questions_encode = os.getenv('QUESTIONS_ENCODE', 'utf-8')
     questions = get_dict_from_files(questions_path, questions_encode)
 
-    vk = Thread(
+    vk_thread = Thread(
         target=vk_bot, args=(os.getenv('VK_TOKEN'), redis_client, questions)
     )
-    tg = Thread(
+    tg_thread = Thread(
         target=tg_bot, args=(os.getenv('TG_TOKEN'), redis_client, questions)
     )
-    vk.start()
-    tg.start()
+    vk_thread.start()
+    tg_thread.start()
 
 
 if __name__ == '__main__':

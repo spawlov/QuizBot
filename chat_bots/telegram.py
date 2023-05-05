@@ -1,8 +1,4 @@
-from handlers.files_handler import get_random_question
-from handlers.redis_handler import get_question_info
-
 from loguru import logger
-
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (
     CommandHandler,
@@ -11,6 +7,9 @@ from telegram.ext import (
     MessageHandler,
     Updater,
 )
+
+from handlers.redis_handler import get_question_info
+from handlers.files_handler import get_random_question
 
 CHOOSING, TYPING_REPLY = range(2)
 
@@ -31,17 +30,17 @@ def start(bot, context):
 
 
 def handle_new_question_request(bot, context):
-    rd = context.bot_data['redis']
+    redis = context.bot_data['redis']
     questions = context.bot_data['questions']
     bot.message.reply_text(
-        get_random_question(rd, bot.effective_user.id, questions)
+        get_random_question(redis, bot.effective_user.id, questions)
     )
     return TYPING_REPLY
 
 
 def handle_solution_attempt(bot, context):
-    rd = context.bot_data['redis']
-    answer = get_question_info(rd, bot.effective_user.id)[2]
+    redis = context.bot_data['redis']
+    answer = get_question_info(redis, bot.effective_user.id)[2]
     answer_for_verify = answer.split('.')[0].replace('"', '')
     if answer_for_verify.lower() != bot.message.text.lower():
         bot.message.reply_text('Неверно.\nПопробуте другой вариант...')
@@ -55,8 +54,8 @@ def handle_solution_attempt(bot, context):
 
 
 def handle_no_answer(bot, context):
-    rd = context.bot_data['redis']
-    answer = rd.hgetall(bot.effective_user.id)[b'answer'].decode('utf-8')
+    redis = context.bot_data['redis']
+    answer = redis.hgetall(bot.effective_user.id)[b'answer'].decode('utf-8')
     bot.message.reply_text(f'Правильный ответ: {answer}')
     bot.message.reply_text('Для продолжения нажмите "Новый вопрос"')
     return CHOOSING
