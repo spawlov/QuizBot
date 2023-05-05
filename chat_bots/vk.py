@@ -1,6 +1,7 @@
 import random
 
-from handlers.files_handler import get_next_question
+from handlers.files_handler import get_random_question
+from handlers.redis_handler import get_question_info
 
 from loguru import logger
 
@@ -26,21 +27,28 @@ def send_message(
 
 
 def handler_user_action(
-        event: Event, vk_api: VkApiMethod, keyboard:  VkKeyboard, rd: Redis
+        event: Event,
+        questions: dict,
+        vk_api: VkApiMethod,
+        keyboard:  VkKeyboard,
+        rd: Redis
 ) -> None:
     if event.text == 'Новый вопрос':
         send_message(
-            vk_api, event, keyboard, get_next_question(rd, event.user_id)
+            vk_api,
+            event,
+            keyboard,
+            get_random_question(rd, event.user_id, questions)
         )
         return
     elif event.text == 'Сдаться':
         answer = rd.hgetall(event.user_id)[b'answer'].decode('utf-8')
         send_message(vk_api, event, keyboard, f'Правильный ответ: {answer}')
         send_message(
-            vk_api, event, keyboard, get_next_question(rd, event.user_id)
+            vk_api, event, keyboard, 'Для продолжения нажмите "Новый вопрос"'
         )
         return
-    answer = rd.hgetall(event.user_id)[b'answer'].decode('utf-8')
+    answer = get_question_info(rd, event.user_id)[2]
     answer_for_verify = answer.split('.')[0].replace('"', '')
     if answer_for_verify.lower() != event.text.lower():
         send_message(
@@ -56,27 +64,27 @@ def handler_user_action(
         f'{answer}'
     )
     send_message(
-        vk_api, event, keyboard, get_next_question(rd, event.user_id)
+        vk_api, event, keyboard, 'Для продолжения нажмите "Новый вопрос"'
     )
     return
 
 
-def vk_bot(vk_token: str, redis_client: Redis) -> None:
+def vk_bot(vk_token: str, redis_client: Redis, questions: dict) -> None:
     vk_session = vk.VkApi(token=vk_token)
     vk_api = vk_session.get_api()
 
     keyboard = VkKeyboard()
-    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.PRIMARY)
-    keyboard.add_button('Сдаться', color=VkKeyboardColor.PRIMARY)
-    keyboard.add_line()
-    keyboard.add_button('Мой счёт', color=VkKeyboardColor.PRIMARY)
+    keyboard.add_button('Новый вопрос', color=VkKeyboardColor.POSITIVE)
+    keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
 
     long_poll = VkLongPoll(vk_session)
     logger.warning('Quiz VK bot is running!')
     try:
         for event in long_poll.listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-                handler_user_action(event, vk_api, keyboard, redis_client)
+                handler_user_action(
+                    event, questions, vk_api, keyboard, redis_client
+                )
     except (
             requests.exceptions.ReadTimeout,
             requests.exceptions.ConnectionError,
