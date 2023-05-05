@@ -20,14 +20,14 @@ def get_dict_from_files(path: str, encode: str) -> dict:
                     question_line < len(content),
                     not content[question_line].startswith('Ответ')
                 ]):
-                    question += content[question_line].strip()
+                    question += content[question_line].replace('\n', ' ')
                     question_line += 1
                 answer_line = question_line + 1
                 while all([
                     answer_line < len(content) - 1,
                     not content[answer_line].startswith('Вопрос ')
                 ]):
-                    answer += content[answer_line].strip()
+                    answer += content[answer_line].replace('\n', ' ')
                     answer_line += 1
                 result[question] = {'filename': filename, 'answer': answer}
     return result
