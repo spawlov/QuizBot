@@ -3,8 +3,6 @@ import random
 
 from handlers.redis_handler import set_question_info
 
-from redis.client import Redis
-
 
 def get_dict_from_files(path, encode):
     result = dict()
