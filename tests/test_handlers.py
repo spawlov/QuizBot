@@ -1,25 +1,22 @@
 import os
 
+import redis
+import pytest
 from dotenv import find_dotenv, load_dotenv
 
 from handlers.files_handler import get_dict_from_files, get_random_question
 from handlers.redis_handler import set_question_info
 
-import pytest
-
-import redis
-
 load_dotenv(find_dotenv())
 
 
 def get_redis_client():
-    rd = redis.Redis(
+    return redis.Redis(
         host=os.getenv('REDIS_HOST'),
         port=int(os.getenv('REDIS_PORT')),
         username=os.getenv('REDIS_USER'),
         password=os.getenv('REDIS_PASSWORD'),
     )
-    return rd
 
 
 def test_type_result_get_dict_from_files():
