@@ -1,15 +1,10 @@
-from handlers.files_handler import get_next_question
+from handlers.files_handler import get_random_question
+from handlers.redis_handler import get_question_info
 
 from loguru import logger
 
-from redis.client import Redis
-
-from telegram import (
-    ReplyKeyboardMarkup,
-    Update,
-)
+from telegram import ReplyKeyboardMarkup
 from telegram.ext import (
-    CallbackContext,
     CommandHandler,
     ConversationHandler,
     Filters,
@@ -17,82 +12,73 @@ from telegram.ext import (
     Updater,
 )
 
-TYPING_REPLY = range(1)
+CHOOSING, TYPING_REPLY = range(2)
 
 
-def start(update: Update, context: CallbackContext) -> range:
-    custom_keyboard = [['Начать']]
+def start(bot, context):
+    custom_keyboard = [['Новый вопрос', 'Сдаться']]
     reply_markup = ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
-    user = update.effective_user
+    user = bot.effective_user
     context.bot_data['redis'].delete(user.id)
     firstname = user.first_name if user.first_name else ''
     lastname = user.last_name if user.last_name else ''
-    update.message.reply_text(
-        f'Здравствуйте, {firstname} {lastname}!'
-    )
-    update.message.reply_text(
-        text='Начнем, пожалуй...',
+    bot.message.reply_text(f'Здравствуйте, {firstname} {lastname}!')
+    bot.message.reply_text(
+        text='Чтобы начать нажмите "Новый вопрос"',
         reply_markup=reply_markup
     )
-    return TYPING_REPLY
+    return CHOOSING
 
 
-def handle_new_quiz(update: Update, context: CallbackContext) -> range:
+def handle_new_question_request(bot, context):
     rd = context.bot_data['redis']
-    custom_keyboard = [['Новый вопрос', 'Сдаться'], ['Мой счёт']]
-    reply_markup = ReplyKeyboardMarkup(custom_keyboard, resize_keyboard=True)
-    update.message.reply_text(
-        get_next_question(rd, update.effective_user.id),
-        reply_markup=reply_markup,
+    questions = context.bot_data['questions']
+    bot.message.reply_text(
+        get_random_question(rd, bot.effective_user.id, questions)
     )
     return TYPING_REPLY
 
 
-def handle_new_question_request(update: Update,
-                                context: CallbackContext) -> range:
+def handle_solution_attempt(bot, context):
     rd = context.bot_data['redis']
-    update.message.reply_text(get_next_question(rd, update.effective_user.id))
-    return TYPING_REPLY
-
-
-def handle_solution_attempt(update: Update, context: CallbackContext) -> range:
-    rd = context.bot_data['redis']
-    answer = rd.hgetall(update.effective_user.id)[b'answer'].decode('utf-8')
+    answer = get_question_info(rd, bot.effective_user.id)[2]
     answer_for_verify = answer.split('.')[0].replace('"', '')
-    if answer_for_verify.lower() != update.message.text.lower():
-        update.message.reply_text('Неверно.\nПопробуте другой вариант...')
+    if answer_for_verify.lower() != bot.message.text.lower():
+        bot.message.reply_text('Неверно.\nПопробуте другой вариант...')
         return TYPING_REPLY
-    update.message.reply_text(f'Поздравляем, вы верно ответили на вопрос.\n\n'
-                              f'Полный вариант ответа:\n\n'
-                              f'{answer}'
-                              )
-    update.message.reply_text(get_next_question(rd, update.effective_user.id))
+    bot.message.reply_text(f'Поздравляем, вы верно ответили на вопрос.\n\n'
+                           f'Полный вариант ответа:\n\n'
+                           f'{answer}'
+                           )
+    bot.message.reply_text('Для продолжения нажмите "Новый вопрос"')
     return TYPING_REPLY
 
 
-def handle_no_answer(update: Update, context: CallbackContext) -> range:
+def handle_no_answer(bot, context):
     rd = context.bot_data['redis']
-    answer = rd.hgetall(update.effective_user.id)[b'answer'].decode('utf-8')
-    update.message.reply_text(f'Правильный ответ: {answer}')
-    update.message.reply_text(get_next_question(rd, update.effective_user.id))
-    return TYPING_REPLY
+    answer = rd.hgetall(bot.effective_user.id)[b'answer'].decode('utf-8')
+    bot.message.reply_text(f'Правильный ответ: {answer}')
+    bot.message.reply_text('Для продолжения нажмите "Новый вопрос"')
+    return CHOOSING
 
 
-def tg_bot(token: str, redis_client: Redis) -> None:
+def tg_bot(token, redis_client, questions):
     bot = Updater(token)
     dispatcher = bot.dispatcher
     dispatcher.bot_data['redis'] = redis_client
+    dispatcher.bot_data['questions'] = questions
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
-            TYPING_REPLY: [
-                MessageHandler(Filters.regex(r'Начать'), handle_new_quiz),
+            CHOOSING: [
                 MessageHandler(
-                    Filters.regex(r'Новый вопрос'),
-                    handle_new_question_request
+                    Filters.regex(r'Новый вопрос'), handle_new_question_request
                 ),
+            ],
+            TYPING_REPLY: [
                 MessageHandler(Filters.regex(r'Сдаться'), handle_no_answer),
-                MessageHandler(Filters.text, handle_solution_attempt)
+                MessageHandler(Filters.text, handle_solution_attempt),
+
             ],
         },
         fallbacks=[],
