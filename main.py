@@ -6,6 +6,8 @@ from chat_bots.vk import vk_bot
 
 from dotenv import find_dotenv, load_dotenv
 
+from handlers.files_handler import get_dict_from_files
+
 from loguru import logger
 
 from notifiers.logging import NotificationHandler
@@ -51,9 +53,19 @@ def main():
         username=os.getenv('REDIS_USER'),
         password=os.getenv('REDIS_PASSWORD'),
     )
+    questions_dir = os.getenv('QUESTIONS_DIR', 'questions')
+    questions_path = f'{os.getcwd()}/{questions_dir}/'
+    questions_encode = os.getenv('QUESTIONS_ENCODE', 'utf-8')
+    questions = get_dict_from_files(questions_path, questions_encode)
 
-    Thread(target=vk_bot, args=(os.getenv('VK_TOKEN'), redis_client)).start()
-    Thread(target=tg_bot, args=(os.getenv('TG_TOKEN'), redis_client)).start()
+    vk = Thread(
+        target=vk_bot, args=(os.getenv('VK_TOKEN'), redis_client, questions)
+    )
+    tg = Thread(
+        target=tg_bot, args=(os.getenv('TG_TOKEN'), redis_client, questions)
+    )
+    vk.start()
+    tg.start()
 
 
 if __name__ == '__main__':
