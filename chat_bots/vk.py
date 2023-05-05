@@ -5,19 +5,14 @@ from handlers.redis_handler import get_question_info
 
 from loguru import logger
 
-from redis.client import Redis
-
 import requests
 
 import vk_api as vk
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from vk_api.longpoll import Event, VkEventType, VkLongPoll
-from vk_api.vk_api import VkApiMethod
+from vk_api.longpoll import VkEventType, VkLongPoll
 
 
-def send_message(
-        vk_api: VkApiMethod, event: Event, keyboard:  VkKeyboard, text: str
-) -> None:
+def send_message(vk_api, event, keyboard, text):
     vk_api.messages.send(
         user_id=event.user_id,
         message=text,
@@ -26,13 +21,7 @@ def send_message(
     )
 
 
-def handler_user_action(
-        event: Event,
-        questions: dict,
-        vk_api: VkApiMethod,
-        keyboard:  VkKeyboard,
-        rd: Redis
-) -> None:
+def handler_user_action(event, questions, vk_api, keyboard, rd):
     if event.text == 'Новый вопрос':
         send_message(
             vk_api,
@@ -69,7 +58,7 @@ def handler_user_action(
     return
 
 
-def vk_bot(vk_token: str, redis_client: Redis, questions: dict) -> None:
+def vk_bot(vk_token, redis_client, questions):
     vk_session = vk.VkApi(token=vk_token)
     vk_api = vk_session.get_api()
 
