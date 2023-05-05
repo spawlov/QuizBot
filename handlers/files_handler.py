@@ -6,11 +6,11 @@ from handlers.redis_handler import set_question_info
 from redis.client import Redis
 
 
-def get_dict_from_files(path: str, encode: str) -> dict:
+def get_dict_from_files(path, encode):
     result = dict()
     list_files = [_ for _ in os.listdir(path) if _.endswith('.txt')]
     for filename in list_files:
-        with open(path + filename, 'r', encoding=encode) as file:
+        with open(f'{path}{filename}', 'r', encoding=encode) as file:
             content = file.readlines()
         for count, line in enumerate(content):
             if line.startswith('Вопрос '):
@@ -33,7 +33,7 @@ def get_dict_from_files(path: str, encode: str) -> dict:
     return result
 
 
-def get_random_question(rd: Redis, user: [int, str], questions: dict) -> str:
+def get_random_question(rd, user, questions):
     question = random.choice(list(questions.keys()))
     set_question_info(
         rd,
