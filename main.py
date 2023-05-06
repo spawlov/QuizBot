@@ -50,7 +50,7 @@ def main():
         password=os.getenv('REDIS_PASSWORD'),
     )
     questions_dir = os.getenv('QUESTIONS_DIR', 'questions')
-    questions_path = f'{os.getcwd()}/{questions_dir}/'
+    questions_path = os.path.normpath(f'{os.getcwd()}/{questions_dir}/')
     questions_encode = os.getenv('QUESTIONS_ENCODE', 'utf-8')
     questions = get_dict_from_files(questions_path, questions_encode)
 
