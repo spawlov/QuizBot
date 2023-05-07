@@ -94,8 +94,9 @@ QUESTIONS_ENCODE=<Кодировка ваших файлов с вопросам
 pip install -r requirements.txt
 ```
 
-Запуск обоих ботов осуществляется командой:
+Запуск ботов осуществляется командой:
 
 ```sh
-python main.py
+python main.py vk_bot # Запуск бота VK
+python main.py tg_bot # Запуск бота Telegram
 ```
