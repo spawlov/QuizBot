@@ -8,7 +8,9 @@ def get_dict_from_files(path, encode):
     result = {}
     list_files = [_ for _ in os.listdir(path) if _.endswith('.txt')]
     for filename in list_files:
-        with open(f'{path}{filename}', 'r', encoding=encode) as file:
+        with open(
+                os.path.normpath(f'{path}/{filename}'), 'r', encoding=encode
+        ) as file:
             content = file.readlines()
         for count, line in enumerate(content):
             if line.startswith('Вопрос '):
