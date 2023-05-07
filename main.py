@@ -1,5 +1,5 @@
 import os
-from threading import Thread
+from sys import argv
 
 import redis
 from loguru import logger
@@ -50,18 +50,21 @@ def main():
         password=os.getenv('REDIS_PASSWORD'),
     )
     questions_dir = os.getenv('QUESTIONS_DIR', 'questions')
-    questions_path = os.path.normpath(f'{os.getcwd()}/{questions_dir}/')
+    questions_path = os.path.normpath(f'{os.getcwd()}/{questions_dir}')
     questions_encode = os.getenv('QUESTIONS_ENCODE', 'utf-8')
     questions = get_dict_from_files(questions_path, questions_encode)
 
-    vk_thread = Thread(
-        target=vk_bot, args=(os.getenv('VK_TOKEN'), redis_client, questions)
-    )
-    tg_thread = Thread(
-        target=tg_bot, args=(os.getenv('TG_TOKEN'), redis_client, questions)
-    )
-    vk_thread.start()
-    tg_thread.start()
+    try:
+        bot = argv[1]
+    except IndexError as error:
+        logger.error(f'{error}: bot not defined')
+        return
+
+    if bot == 'vk_bot':
+        vk_bot(os.getenv('VK_TOKEN'), redis_client, questions)
+    elif bot == 'tg_bot':
+        tg_bot(os.getenv('TG_TOKEN'), redis_client, questions)
+    logger.error(f'Bot "{bot}" not available')
 
 
 if __name__ == '__main__':

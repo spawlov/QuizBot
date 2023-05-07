@@ -85,3 +85,4 @@ def tg_bot(token, redis_client, questions):
     dispatcher.add_handler(conv_handler)
     logger.warning('Quiz telegram bot is running!')
     bot.start_polling()
+    bot.idle()
