@@ -7,7 +7,7 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def get_redis_client():
     return redis.Redis(
         host=os.getenv('REDIS_HOST'),
