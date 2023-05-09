@@ -8,7 +8,6 @@ from telegram.ext import (
     Updater,
 )
 
-from handlers.redis_handler import get_question_info
 from handlers.files_handler import get_random_question
 
 CHOOSING, TYPING_REPLY = range(2)
@@ -40,7 +39,7 @@ def handle_new_question_request(bot, context):
 
 def handle_solution_attempt(bot, context):
     redis = context.bot_data['redis']
-    answer = get_question_info(redis, bot.effective_user.id)[2]
+    answer = redis.hgetall(bot.effective_user.id)[b'answer'].decode('utf-8')
     answer_for_verify = answer.split('.')[0].replace('"', '')
     if answer_for_verify.lower() != bot.message.text.lower():
         bot.message.reply_text('Неверно.\nПопробуте другой вариант...')

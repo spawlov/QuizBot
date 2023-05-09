@@ -1,12 +1,11 @@
 import random
 
 import requests
-from loguru import logger
 import vk_api as vk
-from vk_api.longpoll import VkEventType, VkLongPoll
+from loguru import logger
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+from vk_api.longpoll import VkEventType, VkLongPoll
 
-from handlers.redis_handler import get_question_info
 from handlers.files_handler import get_random_question
 
 
@@ -35,7 +34,7 @@ def handler_user_action(event, questions, vk_api, keyboard, redis):
             vk_api, event, keyboard, 'Для продолжения нажмите "Новый вопрос"'
         )
         return
-    answer = get_question_info(redis, event.user_id)[2]
+    answer = redis.hgetall(event.user_id)[b'answer'].decode('utf-8')
     answer_for_verify = answer.split('.')[0].replace('"', '')
     if answer_for_verify.lower() != event.text.lower():
         send_message(

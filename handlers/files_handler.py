@@ -1,8 +1,6 @@
 import os
 import random
 
-from handlers.redis_handler import set_question_info
-
 
 def get_dict_from_files(path, encode):
     result = {}
@@ -35,11 +33,9 @@ def get_dict_from_files(path, encode):
 
 def get_random_question(redis, user, questions):
     question = random.choice(list(questions.keys()))
-    set_question_info(
-        redis,
-        user,
-        questions[question]['filename'],
-        question,
-        questions[question]['answer']
-    )
+    filename = questions[question]['filename']
+    answer = questions[question]['answer']
+    data = {'file': filename, 'question': question, 'answer': answer}
+    redis.delete(user)
+    redis.hset(user, mapping=data)
     return question
